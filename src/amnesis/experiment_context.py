@@ -47,8 +47,6 @@ class ExperimentContext:
         self.model_dir = self.repository.get_amnesis_dir() / model_name
         self.model_dir.mkdir(parents=True, exist_ok=True)
 
-        self.did_log = False
-
     def __enter__(self):
         self.experiment_dir = self.model_dir / self.experiment.uuid
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
@@ -61,8 +59,7 @@ class ExperimentContext:
     def __exit__(self, exc_type, exc_value, traceback):
         self.time = round(time.perf_counter() - self.time, 6)
 
-        if self.did_log:
-            self.save_metadata()
+        self.save_metadata()
 
     def save_metadata(self):
         self.experiment.date = self.date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -73,22 +70,16 @@ class ExperimentContext:
         self.experiment.save(self.experiment_dir / "metadata.json")
 
     def log_model(self, model, serializer: ModelSerializer):
-        self.did_log = True
-
         model_path = self.experiment_dir / "model"
         serializer.save(model, model_path)
 
     def log_hyperparameter(self, name, hyperparameter):
-        self.did_log = True
         self.hyperparameters[name] = hyperparameter
 
     def log_metric(self, name, metric):
-        self.did_log = True
         self.metrics[name] = metric
 
     def log_artifact(self, artifact: pathlib.Path):
-        self.did_log = True
-
         name = artifact.name
         is_dir = artifact.is_dir()
 
