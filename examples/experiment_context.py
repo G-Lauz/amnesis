@@ -88,4 +88,4 @@ def with_decorator(experiment):
 
 if __name__ == "__main__":
     with_ctx()
-    with_decorator()
+    with_decorator()  # pylint: disable=no-value-for-parameter

@@ -61,15 +61,15 @@ from .list_models import list_models
     subcommands=[
         clipy.Command(
             name="delete",
-            usage="amnesis experiments delete [uuid]",
-            description="Delete an experiment by uuid",
-            options=[clipy.Option(name="experiment uuid", positional=True, type=str)],
+            usage="amnesis experiments delete [hash]",
+            description="Delete an experiment by hash",
+            options=[clipy.Option(name="experiment hash", positional=True, type=str)],
         ),
     ],
 )
 @clipy.Command(
     name="delete",
-    usage="amnesis delete [model | experiment] [model_name | experiment_uuid]",
+    usage="amnesis delete [model | experiment] [model_name | experiment_hash]",
     description="Delete a model or an experiment",
     options=[
         clipy.Option(
@@ -103,7 +103,7 @@ def main(command: clipy.CommandDefinition):
 
     elif command_name == "experiments":
         if subcommand := test_subcommand(command, "delete"):
-            deleteExperiment(repository, subcommand.options["experiment uuid"])
+            deleteExperiment(repository, subcommand.options["experiment hash"])
 
         list_experiments(
             repo=repository,

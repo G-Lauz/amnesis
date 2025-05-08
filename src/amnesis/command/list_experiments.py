@@ -76,11 +76,11 @@ def get_model_names(repo: Repository):
 
 
 def get_experiment_info_frame(experiments: List[Experiment]):
-    columns = ["model", "experiment", "date", "uuid"]
+    columns = ["model", "experiment", "date", "hash"]
     data = []
     for experiment in experiments:
         data.append(
-            [experiment.model_name, experiment.name, experiment.date, experiment.uuid]
+            [experiment.model_name, experiment.name, experiment.date, experiment.hash()]
         )
 
     return DataFrame(columns, data)
