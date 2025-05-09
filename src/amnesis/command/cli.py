@@ -5,9 +5,11 @@ import clipy
 from amnesis.command.delete import deleteExperiment, deleteModel
 from amnesis.repository import Repository
 
+from .add import add
 from .initialization import init
 from .list_experiments import list_experiments
 from .list_models import list_models
+from .track import track
 
 
 @clipy.App(
@@ -78,6 +80,25 @@ from .list_models import list_models
         clipy.Option(name="id", positional=True, type=str),
     ],
 )
+@clipy.Command(
+    name="add",
+    usage="amnesis add [FILE]...",
+    description="Track files with the next experiment",
+    options=[
+        clipy.Option(
+            name="files",
+            type=str,
+            positional=True,
+            nargs="+",
+            default=None,
+        ),
+    ],
+)
+@clipy.Command(
+    name="track",
+    usage="amnesis track",
+    description="Get a list of all tracked files",
+)
 def main(command: clipy.CommandDefinition):
     command_name = command.name
     options = command.options
@@ -126,6 +147,16 @@ def main(command: clipy.CommandDefinition):
             deleteModel(repository, options["id"])
         else:  # elif options["type"] == "experiment":
             deleteExperiment(repository, options["id"])
+
+    elif command_name == "add":
+        if options["files"] is None:
+            print("No files to add")
+            return
+
+        add(options["files"])
+
+    elif command_name == "track":
+        track()
 
     else:
         print(f"Unknown command: {command_name}")

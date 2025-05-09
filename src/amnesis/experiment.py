@@ -33,7 +33,6 @@ class Experiment:
         data = {
             "git": self.git,
             "tree": self.tree,
-            "parent": self.parent,
             "hyperparameters": self.hyperparameters,
             "metrics": self.metrics,
         }

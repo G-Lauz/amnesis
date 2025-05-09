@@ -81,6 +81,10 @@ class ExperimentContext:
             metrics=self.metrics,
         )
 
+        if experiment.hash() == parent:
+            print("Experiment is identical to the previous one. Not saving it.")
+            return
+
         # Update the manifest
         manifest_entry = ManifestEntry(
             date=self.date, name=self.experiment_name, sha1=experiment.hash()
