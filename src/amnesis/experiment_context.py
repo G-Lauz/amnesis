@@ -8,7 +8,8 @@ from .experiment import Experiment
 from .manifest import Manifest, ManifestEntry
 from .model import ModelSerializer
 from .repository import Repository
-from .snapshot.tree import get_snapshot_tree
+from .snapshot.objects import ObjectStore
+from .snapshot.snapshot import Snapshot
 from .utils import generate_name
 
 
@@ -38,6 +39,8 @@ class ExperimentContext:
         self.artifact_buffer = []
         self.model_buffer = []
 
+        self.obj_store = ObjectStore(self.repository.get_amnesis_dir() / "objects")
+
     def __enter__(self):
         if not self.experiment_name:
             self.experiment_name = self._generate_name()
@@ -58,30 +61,30 @@ class ExperimentContext:
         self.time = round(time.perf_counter() - self.time, 6)
         self.date = self.date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-        snapshot_tree = get_snapshot_tree(self.repository.index, ignore=None)
+        snapshot = Snapshot(self.repository.root, self.model_dir, ignore=None)
+        tree_obj = snapshot.create_snapshot()
 
-        # Fetch model manifest
         manifest = Manifest(self.model_dir)
 
-        parent = None
+        parent_hash = None
         manifest_entries = manifest.read_manifest()
         if manifest_entries:
             last_experiment = manifest_entries[-1]
-            parent = last_experiment.sha1
+            parent_hash = last_experiment.sha1
 
         experiment = Experiment(
             git="TODO",  # TODO: Implement git tracking
             model_name=self.model_name,
             name=self.experiment_name,
-            tree=snapshot_tree.hash(),
-            parent=parent,
+            tree=tree_obj.hash(),
+            parent=parent_hash,
             date=self.date,
             time=self.time,
             hyperparameters=self.hyperparameters,
             metrics=self.metrics,
         )
 
-        if experiment.hash() == parent:
+        if experiment.hash() == parent_hash:
             print("Experiment is identical to the previous one. Not saving it.")
             return
 

@@ -5,11 +5,10 @@ import zlib
 
 
 class Object(abc.ABC):
-    def __init__(self, data: bytes, object_type: str):
+    def __init__(self, data: bytes, object_type: str, metadata: dict = None):
         self._data = data
         self.object_type = object_type
-
-        self.header = f"{object_type} {len(data)}".encode("utf-8")
+        self.metadata = metadata
 
     def __hash__(self):
         digest = self.hash()
@@ -24,21 +23,51 @@ class Object(abc.ABC):
 
     @property
     def data(self) -> bytes:
-        return self.header + b"\x00" + self._data
+
+        metadata = b""
+        if self.metadata:
+            metadata = "\n".join(f"{k}: {v}" for k, v in self.metadata.items()).encode(
+                "utf-8"
+            )
+
+        header = f"{self.object_type} {len(metadata)} {len(self._data)}".encode("utf-8")
+
+        return header + b"\x00" + metadata + b"\x00" + self._data
 
     @staticmethod
     def create_object(data: bytes) -> "Object":
         null_byte_index = data.index(b"\x00")
         header = data[:null_byte_index]
 
-        object_type, size = header.decode("utf-8").split(" ")
-        size = int(size)
+        object_type, len_meta, len_data = header.decode("utf-8").split(" ")
+        len_data = int(len_data)
+        len_meta = int(len_meta)
 
-        data = data[null_byte_index + 1 :]
-        if len(data) != size:
-            raise ValueError(f"Data size mismatch: expected {size}, got {len(data)}")
+        metadata_start = null_byte_index + 1
+        metadata_end = metadata_start + len_meta
+        metadata_bytes = data[metadata_start:metadata_end]
 
-        return Object(data, object_type)
+        obj_data_start = metadata_end + 1
+        obj_data = data[obj_data_start:]
+
+        metadata_dict = {}
+        if len_meta > 0:
+            if len(metadata_bytes) != len_meta:
+                raise ValueError(
+                    f"Metadata size mismatch: expected {len_meta}, got {len(metadata_bytes)}"
+                )
+
+            metadata_str = metadata_bytes.decode("utf-8").splitlines()
+            for line in metadata_str:
+                key, value = line.split(": ", 1)
+                metadata_dict[key] = value
+
+        if len(obj_data) != len_data:
+            raise ValueError(
+                f"Data size mismatch: expected {len_data}, got {len(obj_data)}"
+            )
+
+        return Object(obj_data, object_type, metadata=metadata_dict)
 
 
 class ObjectStore(abc.ABC):

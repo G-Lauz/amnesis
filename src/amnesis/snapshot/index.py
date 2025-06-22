@@ -3,7 +3,7 @@ import hashlib
 import pathlib
 from typing import List, Set, Union
 
-from .objects import Object
+from .objects import Object, ObjectStore
 
 
 @dataclasses.dataclass(frozen=True, order=True)
@@ -20,6 +20,8 @@ class Index:
         """
         self.root = pathlib.Path(root).resolve()
         self.index_file = self.root / ".amnesis" / "index"
+
+        self.store = ObjectStore(self.root / ".amnesis" / "objects")
 
     def read_index(self) -> Set[IndexEntry]:
         """
@@ -86,7 +88,10 @@ class Index:
                 data = f.read()
 
             file_type = "blob"
-            sha1 = Object(data, file_type).hash()
+            blob = Object(data, file_type)
+            sha1 = blob.hash()
+
+            self.store.write(blob)
 
             entry = IndexEntry(
                 file_type=file_type,
@@ -104,4 +109,36 @@ class Index:
                 entries.add(entry)
                 print(f"Added {path} to the index.")
 
+        self.write_index(entries)
+
+    def update(self, obj: Object, path: Union[pathlib.Path, str]):
+        """
+        Update the index with a new object.
+        """
+        if obj.object_type != "blob" and obj.object_type != "patch":
+            raise ValueError("Object must be of type 'blob' or 'patch'")
+
+        if isinstance(path, str):
+            path = pathlib.Path(path).resolve()
+
+        entries = self.read_index()
+
+        entry = IndexEntry(
+            file_type=obj.object_type,
+            sha1=obj.hash(),
+            path=str(path.relative_to(self.root)),
+        )
+
+        # Check if the entry already exists
+        copy_entries = entries.copy()
+        for existing_entry in copy_entries:
+            if existing_entry.path == entry.path:
+                entries.remove(existing_entry)
+                print(f"Updated {path} in the index.")
+                break
+        else:
+            print(f"Added {path} to the index.")
+
+        # Add the new entry to the index
+        entries.add(entry)
         self.write_index(entries)
