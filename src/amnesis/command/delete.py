@@ -46,7 +46,7 @@ class deleteModel(delete):
 
 class deleteExperiment(delete):
     """
-    Delete an experiment (by uuid) from the repository.
+    Delete an experiment (by hash) from the repository.
     """
 
     def __call__(self, repository: Repository, id: str, *args, **kwds):

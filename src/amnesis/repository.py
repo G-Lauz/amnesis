@@ -3,12 +3,18 @@ import pathlib
 import shutil
 
 from .experiment import Experiment
+from .snapshot.index import Index
 
 
 class Repository:
     def __init__(self):
         self.root = None
         self.dir_name = ".amnesis"
+
+        self.root = self.get_root()
+
+        if self.root:
+            self.index = Index(self.root)
 
     def init(self, path: pathlib.Path = None):
         if path is None:
@@ -21,6 +27,8 @@ class Repository:
 
         self.root = path
         repository_dir.mkdir(parents=True, exist_ok=True)
+
+        self.index = Index(self.root)
 
     def in_repository(self):
         path = pathlib.Path.cwd()
@@ -59,6 +67,24 @@ class Repository:
             raise FileNotFoundError(f"Model {model_name} not found")
         # OSError exceptions can still be thrown. e.g., permission dernied, resource busy, etc.
 
+    def get_experiment(self, experiment_hash: str) -> Experiment | None:
+        models = self.get_models()
+
+        if models is None:
+            return None
+
+        for model in models:
+            experiments = self.get_experiments(model.name)
+
+            if experiments is None:
+                continue
+
+            for experiment in experiments:
+                if experiment.hash() == experiment_hash:
+                    return experiment
+
+        return None
+
     def get_experiments(self, model_name: str):
         models = self.get_models()
 
@@ -80,29 +106,29 @@ class Repository:
 
         return experiments
 
-    def remove_experiment(self, experiment_uuid: str):
+    def remove_experiment(self, experiment_hash: str):
         models = self.get_models()
 
         if models is None:
             raise FileNotFoundError("No models found")
 
         for model in models:
-            experiments = [exp.uuid for exp in self.get_experiments(model.name)]
+            experiments = [exp.hash() for exp in self.get_experiments(model.name)]
 
-            if experiment_uuid in (experiments or []):
-                self.remove_experiment_by_model(model.name, experiment_uuid)
+            if experiment_hash in (experiments or []):
+                self.remove_experiment_by_model(model.name, experiment_hash)
                 return
 
-        raise FileNotFoundError(f"Experiment {experiment_uuid} not found")
+        raise FileNotFoundError(f"Experiment {experiment_hash} not found")
 
-    def remove_experiment_by_model(self, model_name: str, experiment_uuid: str):
+    def remove_experiment_by_model(self, model_name: str, experiment_hash: str):
         try:
             shutil.rmtree(
-                self.get_amnesis_dir() / model_name / experiment_uuid,
+                self.get_amnesis_dir() / model_name / experiment_hash,
                 ignore_errors=False,
             )
         except FileNotFoundError:
-            raise FileNotFoundError(f"Experiment {experiment_uuid} not found")
+            raise FileNotFoundError(f"Experiment {experiment_hash} not found")
         # OSError exceptions can still be thrown. e.g., permission dernied, resource busy, etc.
 
     def _get_root_path(self, path: pathlib.Path):

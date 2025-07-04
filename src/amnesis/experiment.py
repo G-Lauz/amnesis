@@ -1,4 +1,5 @@
 import dataclasses
+import hashlib
 import json
 import pathlib
 
@@ -9,12 +10,34 @@ class Experiment:
 
     model_name: str
     name: str
-    uuid: str
+    tree: str
+    parent: str
 
     date: str
     time: float
     hyperparameters: dict
     metrics: dict
+
+    def __hash__(self):
+        digest = self.hash()
+        return int(digest, 16)
+
+    def hash(self):
+        """
+        Returns the hash of the experiment as a hexadecimal string.
+        This is a 40-character string representing the SHA-1 hash of the experiment.
+        """
+        self.hyperparameters = dict(sorted(self.hyperparameters.items()))
+        self.metrics = dict(sorted(self.metrics.items()))
+
+        data = {
+            "git": self.git,
+            "tree": self.tree,
+            "hyperparameters": self.hyperparameters,
+            "metrics": self.metrics,
+        }
+        data = json.dumps(data, sort_keys=True).encode("utf-8")
+        return hashlib.sha1(data).hexdigest()
 
     def save(self, path: pathlib.Path):
         if not path.parent.exists():
