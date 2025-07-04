@@ -67,6 +67,24 @@ class Repository:
             raise FileNotFoundError(f"Model {model_name} not found")
         # OSError exceptions can still be thrown. e.g., permission dernied, resource busy, etc.
 
+    def get_experiment(self, experiment_hash: str) -> Experiment | None:
+        models = self.get_models()
+
+        if models is None:
+            return None
+
+        for model in models:
+            experiments = self.get_experiments(model.name)
+
+            if experiments is None:
+                continue
+
+            for experiment in experiments:
+                if experiment.hash() == experiment_hash:
+                    return experiment
+
+        return None
+
     def get_experiments(self, model_name: str):
         models = self.get_models()
 

@@ -6,6 +6,7 @@ from amnesis.command.delete import deleteExperiment, deleteModel
 from amnesis.repository import Repository
 
 from .add import add
+from .diff import diff
 from .initialization import init
 from .list_experiments import list_experiments
 from .list_models import list_models
@@ -99,6 +100,15 @@ from .track import track
     usage="amnesis track",
     description="Get a list of all tracked files",
 )
+@clipy.Command(
+    name="diff",
+    usage="amnesis diff <experiment1> <experiment2>",
+    description="Show the difference between experiment",
+    options=[
+        clipy.Option(name="experiment1", positional=True, type=str),
+        clipy.Option(name="experiment2", positional=True, type=str),
+    ],
+)
 def main(command: clipy.CommandDefinition):
     command_name = command.name
     options = command.options
@@ -157,6 +167,13 @@ def main(command: clipy.CommandDefinition):
 
     elif command_name == "track":
         track()
+
+    elif command_name == "diff":
+        if not options["experiment1"] or not options["experiment2"]:
+            print("Please provide two experiments to compare.")
+            return
+
+        diff(repository, options["experiment1"], options["experiment2"])
 
     else:
         print(f"Unknown command: {command_name}")

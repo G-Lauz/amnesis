@@ -95,8 +95,7 @@ class DiffEngine:
         :return: unified diff string
         """
         lines: List[str] = []
-        lines.append(f"--- {fromfile}")
-        lines.append(f"+++ {tofile}")
+        lines.append(f"--- {fromfile[:6]} - {tofile[:6]} +++")
 
         for chunk in patch:
             old_count = chunk.old_end - chunk.old_start
