@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v5.0.0
     hooks:
     -   id: check-added-large-files
     -   id: check-json
@@ -12,7 +12,7 @@ repos:
     -   id: trailing-whitespace
 
 -   repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 6.0.1
     hooks:
       - id: isort
 
@@ -21,9 +21,10 @@ repos:
       - id: black
         name: black
         entry: black
+        args: ["-l", "140"]
         language: python
         types: [python]
-        additional_dependencies: [black==24.10.0]
+        additional_dependencies: [black==25.1.0]
         log_file: .black.log
         stages: [pre-commit]
 

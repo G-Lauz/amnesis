@@ -3,6 +3,7 @@ import pathlib
 import shutil
 import time
 import uuid
+from copy import copy
 from typing import Dict
 
 from .experiment import Experiment
@@ -12,19 +13,11 @@ from .utils import generate_name
 
 
 class ExperimentContext:
-    repository: Repository
-    experiment: Experiment
-
-    hyperparameters: Dict[str, any]
-    metrics: Dict[str, any]
-
     def __init__(self, model_name: str, experiment_name: str = None):
         self.repository = Repository()
 
         if not self.repository.in_repository():
-            raise RuntimeError(
-                "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
-            )
+            raise RuntimeError("Not in an amnesis repository. Run `amnesis init` to initialize a new repository.")
 
         self.experiment = Experiment(
             git="self.git.head",  # TODO: get git head
@@ -45,12 +38,27 @@ class ExperimentContext:
 
         self.experiment.name = experiment_name
 
-        self.hyperparameters = {}
-        self.metrics = {}
+        self.hyperparameters: Dict[str, any] = {}
+        self.metrics: Dict[str, any] = {}
 
         # Create model directory
         self.model_dir = self.repository.get_amnesis_dir() / model_name
         self.model_dir.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def copy_context_data(from_ctx):
+        """
+        Create a new Experiment context with copied hyperparameters and metrics from `from_ctx`.<br/>
+        Model is copied, <u>experiment name is not</u>. A random experiment name will be generated.
+
+        :param from_ctx: Object to copy data from. Should be an instance of ExperimentContext.
+        """
+        new_context = ExperimentContext(from_ctx.experiment.model_name)
+
+        new_context.hyperparameters = copy(from_ctx.hyperparameters)
+        new_context.metrics = copy(from_ctx.metrics)
+
+        return new_context
 
     def __enter__(self):
         self.experiment_dir = self.model_dir / self.experiment.uuid
