@@ -21,6 +21,11 @@ class ExperimentContext:
     def __init__(self, model_name: str, experiment_name: str = None):
         self.repository = Repository()
 
+        if not self.repository.in_repository():
+            raise RuntimeError(
+                "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
+            )
+
         self.experiment = Experiment(
             git="self.git.head",  # TODO: get git head
             model_name=model_name,
