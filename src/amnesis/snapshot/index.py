@@ -33,9 +33,9 @@ class Index:
         with open(self.index_file, "r", encoding="utf-8") as file:
             data = file.read()
 
-        digest = hashlib.sha1(data[:-40].encode("utf-8")).hexdigest()
+        digest = hashlib.sha256(data[:-64].encode("utf-8")).hexdigest()
 
-        if digest != data[-40:]:
+        if digest != data[-64:]:
             raise ValueError("Index file is corrupted")
 
         lines = data.splitlines()
@@ -62,12 +62,12 @@ class Index:
             )
             + "\n"
         )
-        sha1 = hashlib.sha1((header + content).encode("utf-8")).hexdigest()
+        sha256 = hashlib.sha256((header + content).encode("utf-8")).hexdigest()
 
         with open(self.index_file, "w", encoding="utf-8") as file:
             file.write(header)
             file.write(content)
-            file.write(sha1)
+            file.write(sha256)
 
     def add(self, paths: Union[str, pathlib.Path, List[str], List[pathlib.Path]]):
         """

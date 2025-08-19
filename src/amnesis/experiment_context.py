@@ -25,10 +25,7 @@ class ExperimentContext:
     def __init__(self, model_name: str, experiment_name: str = None):
         self.repository = Repository()
 
-        if not self.repository.in_repository():
-            raise RuntimeError(
-                "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
-            )
+        self.repository.validate_in_repository()
 
         self.model_name = model_name
         self.experiment_name = experiment_name

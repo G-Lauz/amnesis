@@ -25,7 +25,7 @@ class Experiment:
     def hash(self):
         """
         Returns the hash of the experiment as a hexadecimal string.
-        This is a 40-character string representing the SHA-1 hash of the experiment.
+        This is a 40-character string representing the SHA-256 hash of the experiment.
         """
         self.hyperparameters = dict(sorted(self.hyperparameters.items()))
         self.metrics = dict(sorted(self.metrics.items()))
@@ -37,7 +37,7 @@ class Experiment:
             "metrics": self.metrics,
         }
         data = json.dumps(data, sort_keys=True).encode("utf-8")
-        return hashlib.sha1(data).hexdigest()
+        return hashlib.sha256(data).hexdigest()
 
     def save(self, path: pathlib.Path):
         if not path.parent.exists():

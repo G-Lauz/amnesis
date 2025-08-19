@@ -120,7 +120,7 @@ class Snapshot:
 
         # Create a new tree object
         tree = Tree(self.index, ignore=self.ignore)
-        tree_obj = tree.compute_tree_object()
+        tree_obj = tree.get_object()
         self.obj_store.write(tree_obj)
 
         return tree_obj

@@ -77,7 +77,7 @@ def with_decorator(experiment):
     Run an experiment using the "remember" decorator, automatically wrapping the function with the ExperimentContext context manager,
     and automatically logging the hyperparameters and metrics using the specified variable names
     """
-    hyper_param1 = 0.01
+    hyper_param1 = 0.03
     hyper_param2 = 32
 
     metric1 = 0.95

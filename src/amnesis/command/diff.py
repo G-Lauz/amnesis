@@ -34,11 +34,7 @@ def diff(repository: Repository, hash1, hash2):
     """
     Compare two experiments and print the differences.
     """
-    if not repository.in_repository():
-        print(
-            "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
-        )
-        return
+    repository.validate_in_repository()
 
     exp1 = repository.get_experiment(hash1)
     exp2 = repository.get_experiment(hash2)

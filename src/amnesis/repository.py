@@ -34,6 +34,18 @@ class Repository:
         path = pathlib.Path.cwd()
         return self._get_root_path(path) is not None
 
+    def validate_in_repository(self):
+        """
+        Validate that the current directory is an amnesis repository.
+
+        Raises:
+            RuntimeError: If the current directory is not an amnesis repository.
+        """
+        if not self.in_repository():
+            raise RuntimeError(
+                "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
+            )
+
     def get_root(self):
         path = pathlib.Path.cwd()
         return self._get_root_path(path)

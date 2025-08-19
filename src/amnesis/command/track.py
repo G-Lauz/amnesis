@@ -8,10 +8,7 @@ def track():
     """
     # Check if the current directory is a repository
     repository = Repository()
-    if not repository.in_repository():
-        raise RuntimeError(
-            "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
-        )
+    repository.validate_in_repository()
 
     # Get the index of the repository
     index = Index(repository.get_root())

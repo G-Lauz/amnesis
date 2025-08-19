@@ -19,24 +19,8 @@ class Tree:
         self.ignore = ignore
         if self.ignore is None:
             self.ignore = []
-
-        if isinstance(self.ignore, str):
+        elif isinstance(self.ignore, str):
             self.ignore = [self.ignore]
-
-    def compute_tree_object(self) -> Object:
-        entries = self.index.read_index()
-        entries = sorted(entries, key=lambda x: x.path)
-
-        lines = []
-        for entry in entries:
-            if entry.path in self.ignore:
-                continue
-
-            lines.append(f"{entry.file_type} {entry.sha1} {entry.path}")
-
-        data = "\n".join(lines).encode("utf-8")
-
-        return Object(data, "tree")
 
     def get_object(self) -> Object:
         entries = self.index.read_index()
@@ -47,10 +31,7 @@ class Tree:
             if entry.path in self.ignore:
                 continue
 
-            file_type = entry.file_type
-            object_hash = entry.sha1
-
-            lines.append(f"{file_type} {object_hash} {entry.path}")
+            lines.append(f"{entry.file_type} {entry.sha1} {entry.path}")
 
         data = "\n".join(lines).encode("utf-8")
 

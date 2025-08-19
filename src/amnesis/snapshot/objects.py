@@ -17,9 +17,9 @@ class Object(abc.ABC):
     def hash(self):
         """
         Returns the hash of the experiment as a hexadecimal string.
-        This is a 40-character string representing the SHA-1 hash of the experiment.
+        This is a 40-character string representing the SHA-256 hash of the experiment.
         """
-        return hashlib.sha1(self._data).hexdigest()
+        return hashlib.sha256(self._data).hexdigest()
 
     @property
     def data(self) -> bytes:
