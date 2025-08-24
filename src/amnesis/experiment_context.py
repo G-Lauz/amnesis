@@ -13,6 +13,12 @@ from .utils import generate_name
 
 
 class ExperimentContext:
+    repository: Repository
+    experiment: Experiment
+
+    hyperparameters: Dict[str, any]
+    metrics: Dict[str, any]
+
     def __init__(self, model_name: str, experiment_name: str = None):
         self.repository = Repository()
 
@@ -38,8 +44,8 @@ class ExperimentContext:
 
         self.experiment.name = experiment_name
 
-        self.hyperparameters: Dict[str, any] = {}
-        self.metrics: Dict[str, any] = {}
+        self.hyperparameters = {}
+        self.metrics = {}
 
         # Create model directory
         self.model_dir = self.repository.get_amnesis_dir() / model_name
