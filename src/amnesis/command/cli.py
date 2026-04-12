@@ -1,5 +1,3 @@
-from typing import Optional
-
 import clipy
 
 from amnesis.command.delete import deleteExperiment, deleteModel
@@ -10,137 +8,175 @@ from .list_experiments import list_experiments
 from .list_models import list_models
 
 
-@clipy.App(
-    usage="amnesis [OPTIONS] COMMAND [ARGS] ...",
-    description="A local experiments tracking tool",
-)
-@clipy.Command(
-    name="init", usage="amnesis init", description="Initialize a new amnesis project"
-)
-@clipy.Command(
-    name="info",
-    usage="amnesis info",
-    description="Show information about the current project",
-)
-@clipy.Command(
-    name="models",
-    usage="amnesis models",
-    description="List all models",
-    subcommands=[
-        clipy.Command(
-            name="delete",
-            usage="amnesis models delete [model_name]",
-            description="Delete a model",
-            options=[clipy.Option(name="model_name", positional=True, type=str)],
-        ),
-    ],
-)
-@clipy.Command(
-    name="list",
-    usage="amnesis list [--short]",
-    description="List all experiments",
-    options=[
-        clipy.Option(name="short", action="store_true", required=False),
-        clipy.Option(name="sort", type=str, nargs="+", default=None, required=False),
-    ],
-)
-@clipy.Command(
-    name="experiments",
-    usage="amnesis experiments",
-    description="List all experiments",
-    options=[
-        clipy.Option(name="model", type=str, default=None, required=False),
-        clipy.Option(
-            name="hyperparameters", action="store_true", default=False, required=False
-        ),
-        clipy.Option(
-            name="metrics", action="store_true", default=False, required=False
-        ),
-        clipy.Option(name="sort", type=str, nargs="+", default=None, required=False),
-    ],
-    subcommands=[
-        clipy.Command(
-            name="delete",
-            usage="amnesis experiments delete [uuid]",
-            description="Delete an experiment by uuid",
-            options=[clipy.Option(name="experiment uuid", positional=True, type=str)],
-        ),
-    ],
-)
-@clipy.Command(
-    name="delete",
-    usage="amnesis delete [model | experiment] [model_name | experiment_uuid]",
-    description="Delete a model or an experiment",
-    options=[
-        clipy.Option(
-            name="type", choices=["model", "experiment"], positional=True, type=str
-        ),
-        clipy.Option(name="id", positional=True, type=str),
-    ],
-)
-def main(command: clipy.CommandDefinition):
-    command_name = command.name
-    options = command.options
+class ModelsCommand(clipy.Command):
+    """
+    Manage models in the repository
+    """
 
-    repository = Repository()
-    in_repository = repository.in_repository()
+    # TODO: the docstring description should be used instead
+    # description = "Manage models in the repository"
 
-    if not in_repository and command_name != "init":
-        print(
-            "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
+    repo: Repository
+
+    def __init__(self):
+        super().__init__()
+        self.repo = None
+
+    def set_repository(self, repo: Repository):
+        self.repo = repo
+
+    def __call__(self):
+        list_models(repo=self.repo)
+
+    @clipy.Command()
+    def delete(self, model_name: str):
+        """
+        Delete a model from the repository.
+
+        Args:
+            model_name (str): The name of the model to delete
+        """
+        deleteModel(Repository(), model_name)
+
+
+class ExperimentsCommand(clipy.Command):
+    """
+    Manage experiments in the repository
+    """
+
+    repo: Repository
+
+    def __init__(self):
+        super().__init__()
+        self.repo = None
+
+    def set_repository(self, repo: Repository):
+        self.repo = repo
+
+    def __call__(
+        self,
+        model: str = None,
+        hyperparameters: bool = False,
+        metrics: bool = False,
+        sort: list[str] = None,
+    ):
+        """
+        List experiments in the repository,
+        optionally filtering by model name and showing hyperparameters and metrics.
+
+        Args:
+            model: The name of the model to filter experiments by.
+            hyperparameters: Whether to show hyperparameters for each experiment.
+            metrics: Whether to show metrics for each experiment.
+            sort: A list of fields to sort the experiments by.
+        """
+        list_experiments(
+            repo=self.repo,
+            model_name=model,
+            hyperparameters=hyperparameters,
+            metrics=metrics,
+            sort=sort,
         )
-        return
 
-    if command_name == "init":
-        init(repo=repository)
-    elif command_name == "info":
+    @clipy.Command()
+    def delete(self, experiment_uuid: str):
+        """
+        Delete an experiment from the repository.
+
+        Args:
+            experiment_uuid (str): The uuid of the experiment to delete
+        """
+        deleteExperiment(Repository(), experiment_uuid)
+
+
+class Amnesis(clipy.Command):
+    """
+    A local experiments tracking tool
+    """
+
+    repo: Repository
+    in_repo: bool
+
+    models: ModelsCommand = ModelsCommand()
+    experiments: ExperimentsCommand = ExperimentsCommand()
+
+    def __init__(self):
+        super().__init__()
+
+        self.repo = Repository()
+        self.in_repo = self.repo.in_repository()
+
+        self.models.set_repository(self.repo)
+        self.experiments.set_repository(self.repo)
+
+    def _check_if_in_repository(self):
+        if not self.in_repo:
+            print(
+                "Not in an amnesis repository. Run `amnesis init` to initialize a new repository."
+            )
+            return False
+        return True
+
+    @clipy.Command
+    def init(self):
+        """
+        Inistialize a new amnesis project
+        """
+        init(repo=self.repo)
+
+    @clipy.Command
+    def info(self):
+        """
+        Show information about the current project
+        """
+        self._check_if_in_repository()
         raise NotImplementedError
-    elif command_name == "models":
-        if subcommand := test_subcommand(command, "delete"):
-            deleteModel(repository, subcommand.options["model_name"])
 
-        list_models(repo=repository)
+    @clipy.Command
+    def list(self, short: bool = False, sort: list[str] = None):
+        """
+        List all experiments
 
-    elif command_name == "experiments":
-        if subcommand := test_subcommand(command, "delete"):
-            deleteExperiment(repository, subcommand.options["experiment uuid"])
+        Args:
+            short: If True, only show a short description of each experiment.
+            sort: A list of fields to sort the experiments by.
+        """
+        if not self._check_if_in_repository():
+            return
 
         list_experiments(
-            repo=repository,
-            model_name=options["model"],
-            hyperparameters=options["hyperparameters"],
-            metrics=options["metrics"],
-            sort=options["sort"],
-        )
-    elif command_name == "list":
-        short_desc = options["short"]
-        list_experiments(
-            repo=repository,
+            repo=self.repo,
             model_name=None,
-            hyperparameters=not short_desc,
-            metrics=not short_desc,
-            sort=options["sort"],
+            hyperparameters=not short,
+            metrics=not short,
+            sort=sort,
         )
-    elif command_name == "delete":
-        if options["type"] == "model":
-            deleteModel(repository, options["id"])
-        else:  # elif options["type"] == "experiment":
-            deleteExperiment(repository, options["id"])
 
-    else:
-        print(f"Unknown command: {command_name}")
+    @clipy.Command
+    def delete(self, type: str, id: str):
+        """
+        Delete a model or an experiment
+
+        Args:
+            type: The type of the item to delete, either "model" or "experiment".
+            id: The name of the model or the uuid of the experiment to delete.
+        """
+        if not self._check_if_in_repository():
+            return
+
+        # check if type is valid
+        if type not in ["model", "experiment"]:
+            print(f"Unknown type: {type}. Type must be either 'model' or 'experiment'.")
+            return
+
+        if type == "model":
+            deleteModel(self.repo, id)
+        elif type == "experiment":
+            deleteExperiment(self.repo, id)
+        else:
+            print(f"Unknown type: {type}. Type must be either 'model' or 'experiment'.")
 
 
-def get_subcommand(
-    command: clipy.CommandDefinition,
-) -> Optional[clipy.CommandDefinition]:
-    return command.subcommands[0] if command.subcommands else None
-
-
-def test_subcommand(
-    command: clipy.CommandDefinition, subcommand_name: str
-) -> Optional[clipy.CommandDefinition]:
-    subcommand = get_subcommand(command)
-    if subcommand and subcommand.name == subcommand_name:
-        return subcommand
-    return None
+def main():
+    cli = Amnesis()
+    cli()
